@@ -8,7 +8,7 @@ app = Flask(__name__)
 
 # --- Load and Clean Data ---
 try:
-    df = pd.read_csv('Job Dataset.csv')
+    df = pd.read_csv('custom_job_dataset.csv')
     df.dropna(subset=['Job_Requirements'], inplace=True)
     df.drop_duplicates(subset=['Job_ID'], inplace=True)
     df['Job_Requirements'] = df['Job_Requirements'].astype(str).str.lower()
