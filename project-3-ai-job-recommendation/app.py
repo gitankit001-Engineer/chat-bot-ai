@@ -1,6 +1,6 @@
-# ===========================================
-# APP.PY — AI Tech Recommender (ngrok + UI)
-# ===========================================
+# =======================================================
+# APP.PY — AI Tech Recommender (Hybrid Match + ngrok)
+# =======================================================
 
 import os
 import pandas as pd
@@ -13,12 +13,12 @@ app = Flask(__name__)
 
 # --- Load and Clean Data ---
 try:
-    # Use your generated dataset
+    # Tumhari generated file ko read karna
     df = pd.read_csv('custom_job_dataset.csv')
     df.dropna(subset=['Required_Skills'], inplace=True)
     df['Required_Skills'] = df['Required_Skills'].astype(str).str.lower()
     
-    # Extract unique skills for the HTML Dropdown
+    # Dropdown ke liye saari unique skills nikalna
     all_skills_set = set()
     for req in df['Required_Skills']:
         skills = [s.strip().title() for s in req.split(',') if s.strip()]
@@ -28,7 +28,7 @@ try:
 except FileNotFoundError:
     print("⚠️ ERROR: 'custom_job_dataset.csv' not found. Using fallback data.")
     df = pd.DataFrame()
-    unique_skills = ["Python", "Sql", "Javascript", "Aws", "Docker"]
+    unique_skills = ["Python", "Sql", "Machine Learning", "Linux", "Power Bi", "Cyber Security"]
 
 # --- Integrated HTML + CSS + JS Template ---
 HTML_PAGE = """
@@ -38,6 +38,7 @@ HTML_PAGE = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DecodeLabs | Tech Recommender</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-dark: #0b1320;
@@ -70,7 +71,6 @@ HTML_PAGE = """
             max-width: 1200px;
         }
 
-        /* --- LEFT PANEL (Controls) --- */
         .left-panel {
             flex: 1;
             background: var(--glass-bg);
@@ -87,7 +87,6 @@ HTML_PAGE = """
             font-size: 32px;
             font-weight: 800;
             margin: 0 0 5px 0;
-            color: var(--text-main);
             letter-spacing: -0.5px;
         }
 
@@ -102,7 +101,6 @@ HTML_PAGE = """
 
         .form-group { margin-bottom: 22px; }
         
-        /* Professional Label Styling */
         label { 
             display: block; 
             margin-bottom: 8px; 
@@ -121,7 +119,6 @@ HTML_PAGE = """
             border-radius: 12px;
             color: white; 
             font-size: 15px; 
-            font-family: 'Inter', sans-serif;
             outline: none; 
             appearance: none;
             transition: all 0.3s ease;
@@ -155,10 +152,8 @@ HTML_PAGE = """
         .primary-btn:hover { 
             background: var(--accent-hover); 
             transform: translateY(-2px);
-            box-shadow: 0 15px 25px rgba(0, 229, 255, 0.3);
         }
 
-        /* --- RIGHT PANEL (Results) --- */
         .right-panel {
             flex: 1.2;
             background: var(--glass-bg);
@@ -175,15 +170,12 @@ HTML_PAGE = """
         .right-panel h2 {
             font-size: 22px;
             font-weight: 600;
-            color: var(--text-main);
             margin: 0 0 25px 0;
             padding-bottom: 15px;
             border-bottom: 1px solid var(--glass-border);
         }
 
-        /* Custom Scrollbar */
         .right-panel::-webkit-scrollbar { width: 6px; }
-        .right-panel::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 10px; }
         .right-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
         .right-panel::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
@@ -193,18 +185,8 @@ HTML_PAGE = """
             margin-top: 25px; 
             color: var(--accent); 
             font-weight: 600;
-            font-size: 14px;
-            letter-spacing: 1px;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 0.6; }
-            50% { opacity: 1; }
-            100% { opacity: 0.6; }
         }
         
-        /* --- JOB RESULT CARDS --- */
         .result-card {
             background: var(--card-bg); 
             border-left: 4px solid var(--accent);
@@ -212,25 +194,14 @@ HTML_PAGE = """
             padding: 25px; 
             margin-bottom: 20px;
             transition: all 0.3s ease;
-            border-top: 1px solid rgba(255,255,255,0.03);
-            border-right: 1px solid rgba(255,255,255,0.03);
-            border-bottom: 1px solid rgba(255,255,255,0.03);
         }
         
         .result-card:hover {
             transform: translateX(5px);
             background: rgba(255, 255, 255, 0.05);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-            border-left-color: #fff;
         }
 
-        .result-card h3 { 
-            margin: 0 0 10px 0; 
-            font-size: 18px; 
-            font-weight: 600;
-            color: var(--text-main);
-        }
-        
+        .result-card h3 { margin: 0 0 10px 0; font-size: 18px; font-weight: 600;}
         .match-stat { 
             font-size: 32px; 
             font-weight: 800; 
@@ -239,20 +210,9 @@ HTML_PAGE = """
             margin-top: -35px;
             text-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
         }
-        
-        .stack-list { 
-            margin: 15px 0 0 0; 
-            color: var(--text-muted); 
-            font-size: 14px; 
-            line-height: 1.6;
-        }
+        .stack-list { margin: 15px 0 0 0; color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+        .stack-list strong { color: #fff; }
 
-        .stack-list strong {
-            color: #fff;
-            font-weight: 600;
-        }
-
-        /* Responsive Design */
         @media (max-width: 900px) {
             .main-wrapper { flex-direction: column; }
             .right-panel { max-height: none; overflow-y: visible; }
@@ -260,10 +220,11 @@ HTML_PAGE = """
     </style>
 </head>
 <body>
+
 <div class="main-wrapper">
     <div class="left-panel">
         <h1>Digital Matchmaker</h1>
-        <p>AI-Powered Career Profiling System</p>
+        <p class="subtitle">AI-Powered Career Profiling</p>
     
         <div class="form-group">
             <label>Experience Level</label>
@@ -274,72 +235,41 @@ HTML_PAGE = """
             </select>
         </div>
 
+        {% for i in range(1, 6) %}
         <div class="form-group">
-            <label>Core Skill 1</label>
-            <select id="s1">
+            <label>Core Skill {{ i }}</label>
+            <select id="s{{ i }}">
                 <option value="">-- Select Skill --</option>
                 {% for skill in skills %}
                 <option value="{{ skill }}">{{ skill }}</option>
                 {% endfor %}
             </select>
         </div>
-        
-        <div class="form-group">
-            <label>Core Skill 2</label>
-            <select id="s2">
-                <option value="">-- Select Skill --</option>
-                {% for skill in skills %}
-                <option value="{{ skill }}">{{ skill }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        
-        <div class="form-group">
-            <label>Core Skill 3</label>
-            <select id="s3">
-                <option value="">-- Select Skill --</option>
-                {% for skill in skills %}
-                <option value="{{ skill }}">{{ skill }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label>Core Skill 4</label>
-            <select id="s4">
-                <option value="">-- Select Skill --</option>
-                {% for skill in skills %}
-                <option value="{{ skill }}">{{ skill }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label>Core Skill 5</label>
-            <select id="s5">
-                <option value="">-- Select Skill --</option>
-                {% for skill in skills %}
-                <option value="{{ skill }}">{{ skill }}</option>
-                {% endfor %}
-            </select>
-        </div>
+        {% endfor %}
         
         <button class="primary-btn" onclick="getRecommendations()">Initialize AI Engine</button>
-        
-        <div class="loader" id="loader">Running AI Math...</div>
-        
-    </div> <div class="right-panel">
-        <h2>Recommended Roles</h2>
-        <div id="results"></div>
-    </div> </div>
+        <div class="loader" id="loader">Processing Vector Math...</div>
+    </div> 
+    
+    <div class="right-panel">
+        <h2>Recommended Roles (Top 5)</h2>
+        <div id="results">
+            <div style="text-align: center; color: var(--text-muted); margin-top: 50px; font-size: 14px;">
+                Select your skills and initialize the engine to see your matches here.
+            </div>
+        </div>
+    </div> 
+</div>
 
 <script>
     async function getRecommendations() {
-        const s1 = document.getElementById('s1').value;
-        const s2 = document.getElementById('s2').value;
-        const s3 = document.getElementById('s3').value;
-        const s4 = document.getElementById('s4').value;
-        const s5 = document.getElementById('s5').value;
+        const skills = [
+            document.getElementById('s1').value,
+            document.getElementById('s2').value,
+            document.getElementById('s3').value,
+            document.getElementById('s4').value,
+            document.getElementById('s5').value
+        ];
 
         document.getElementById('loader').style.display = 'block';
         document.getElementById('results').innerHTML = '';
@@ -348,25 +278,33 @@ HTML_PAGE = """
             const response = await fetch('/recommend', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ skills: [s1, s2, s3, s4, s5] })
+                body: JSON.stringify({ skills: skills })
             });
             
             const data = await response.json();
             document.getElementById('loader').style.display = 'none';
             
             let html = '';
-            data.forEach((item, index) => {
-                html += `
-                <div class="result-card">
-                    <h3>Rank #${index + 1} | ${item.role}</h3>
-                    <div class="match-stat">${item.match}%</div>
-                    <p class="stack-list"><strong>Required Stack:</strong><br>${item.stack}</p>
-                </div>`;
-            });
+            if(data.length === 0) {
+                html = '<p style="text-align:center; color:var(--text-muted);">No exact matches found. Try changing skills.</p>';
+            } else {
+                data.forEach((item, index) => {
+                    html += `
+                    <div class="result-card">
+                        <div class="match-stat">${item.match}%</div>
+                        <h3>Rank #${index + 1} | ${item.role}</h3>
+                        <p class="stack-list"><strong>Required Stack:</strong><br>${item.stack}</p>
+                    </div>`;
+                });
+            }
             document.getElementById('results').innerHTML = html;
         } catch (error) {
             document.getElementById('loader').style.display = 'none';
-            document.getElementById('results').innerHTML = `<p style="color:red;">Error connecting to engine.</p>`;
+            document.getElementById('results').innerHTML = `
+                <div class="result-card" style="border-left-color: #ff3366;">
+                    <h3 style="color: #ff3366;">Connection Error</h3>
+                    <p class="stack-list">Failed to fetch data from the AI engine.</p>
+                </div>`;
         }
     }
 </script>
@@ -385,14 +323,15 @@ def recommend():
     data = request.get_json()
     skills = data.get('skills', ["", "", "", "", ""])
     
-    s1, s2, s3, s4, s5 = (skills + ["", "", "", "", ""])[:5]  # Ensure we have 5 skills, fill missing with empty strings
+    # Filter empty strings
+    valid_skills = [s.strip().lower() for s in skills if s.strip()]
     
-    # Cold start baseline
-    if not s1 and not s2 and not s3:
-        user_profile = "python sql javascript"
-    else:
-        user_profile = f"{s1} {s2} {s3} {s4} {s5}".lower()
+    if not valid_skills:
+        return jsonify([])
         
+    user_profile = " ".join(valid_skills)
+        
+    # --- PHASE 1: AI / ML SCORE (Cosine Similarity) ---
     vectorizer = TfidfVectorizer()
     all_text = df['Required_Skills'].tolist()
     all_text.append(user_profile)
@@ -401,30 +340,53 @@ def recommend():
     item_vectors = tfidf_matrix[:-1]
     user_vector = tfidf_matrix[-1]
     
-    scores = cosine_similarity(user_vector, item_vectors).flatten()
+    ai_scores = cosine_similarity(user_vector, item_vectors).flatten()
     
+    # --- PHASE 2: EXACT MATCH INTERSECTION SCORE ---
+    exact_match_scores = []
+    for req in df['Required_Skills']:
+        req_skills_list = [s.strip().lower() for s in req.split(',')]
+        
+        # Calculate intersection
+        match_count = sum(1 for skill in valid_skills if skill in req_skills_list)
+        score = match_count / len(valid_skills)
+        exact_match_scores.append(score)
+        
+    # --- PHASE 3: HYBRID SORTING ---
+   # --- PHASE 3: HYBRID SORTING & DIVERSITY FILTER ---
     df_copy = df.copy()
-    df_copy['Match_Score'] = scores
+    hybrid_scores = [ (ai * 0.4) + (exact * 0.6) for ai, exact in zip(ai_scores, exact_match_scores) ]
+    df_copy['Match_Score'] = hybrid_scores
     
-    top_10 = df_copy.sort_values(by='Match_Score', ascending=False).head(10)
+    # 1. Sabse pehle Match Score ke hisaab se sort karo (Highest to Lowest)
+    df_sorted = df_copy.sort_values(by='Match_Score', ascending=False)
+    
+    # 2. DIVERSITY FILTER: Ek job role ko sirf ek baar rakho (Duplicates hata do)
+    # Yeh line ensure karegi ki Data Scientist sirf ek baar aaye aur baaki jagah doosre roles lein
+    if 'Job_Role' in df_sorted.columns:
+        df_unique = df_sorted.drop_duplicates(subset=['Job_Role'], keep='first')
+    else:
+        df_unique = df_sorted # Fallback agar column name alag ho
+    
+    # 3. Ab in unique roles mein se Top 10 nikal lo
+    top_5 = df_unique.head(5)
     
     results = []
-    for _, row in top_10.iterrows():
-        results.append({
-            "role": str(row.get('Job_Role', 'Unknown Role')),
-            "match": round(row['Match_Score'] * 100, 2),
-            "stack": str(row['Required_Skills']).title()
-        })
+    for _, row in top_5.iterrows():
+        # Match score agar 0 ho toh usko hide kar do
+        match_percentage = round(row['Match_Score'] * 100, 2)
+        if match_percentage > 0:
+            results.append({
+                "role": str(row.get('Job_Role', 'Technical Specialist')).title(),
+                "match": match_percentage,
+                "stack": str(row.get('Required_Skills', '')).title()
+            })
         
     return jsonify(results)
 
-# --- Run Flask + ngrok ---
 if __name__ == '__main__':
-    # Tera Auth token set kiya hai
     ngrok.set_auth_token("34vanTj6wOahEuYzqikHCgVsvUh_55byjA96RB6ZdYoGDF7Cy")
-    
     print("🚀 Starting Flask Engine...")
     public_url = ngrok.connect(5000).public_url
     print(f"\n🌍 PUBLIC URL ACTIVE: {public_url}\n")
-    
-    app.run(port=5000)     
+    app.run(port=5000)
